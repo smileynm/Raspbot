@@ -15,12 +15,17 @@ using json = nlohmann::json;
 std::string handleRestApiRequest(RaspbotService& raspbotService, const std::string& request) {
     json response;
     try {
+        // req_json은 client가 요청한 request를 json형태로 따온 것 (parse)
         json req_json = json::parse(request);
+
+        // req_json 객체에서 "endpoint" 키를 찾음
+        // 만약 endpoint를 찾지 못하면, 빈 문자열 ("")을 반환
         std::string endpoint = req_json.value("endpoint", "");
 
         if (endpoint.empty()) {
             response["status"] = "error";
             response["message"] = "엔드포인트가 지정되지 않음.";
+            // json형태의 데이터를 string으로 변환하여 return.  (dump())
             return response.dump();
         }
 
@@ -28,51 +33,78 @@ std::string handleRestApiRequest(RaspbotService& raspbotService, const std::stri
         bool success = false;
         std::string message = "";
 
+        // 모터 제어
         if (endpoint == "/motor") {
             success = raspbotService.controlMotor(
                 static_cast<MotorNumber>(req_json.value("motor_number", 0)),
                 static_cast<MotorDirection>(req_json.value("direction", 0)),
                 req_json.value("speed", 0));
             message = success ? "모터 제어 성공" : "모터 제어 실패";
-        } else if (endpoint == "/servo") {
+        }
+        
+        // 서보 제어
+        else if (endpoint == "/servo") {
             success = raspbotService.controlServo(
                 req_json.value("servo_number", 0),
                 req_json.value("angle", 0));
             message = success ? "서보 제어 성공" : "서보 제어 실패";
-        } else if (endpoint == "/rgb/all") {
+        }
+        
+        // 전체 RGB 제어
+        else if (endpoint == "/rgb/all") {
             success = raspbotService.controlRgbAll(
                 static_cast<DeviceStatus>(req_json.value("status", 0)),
                 static_cast<RgbColor>(req_json.value("color", 0)));
             message = success ? "RGB 전체 제어 성공" : "RGB 전체 제어 실패";
-        } else if (endpoint == "/rgb/individual") {
+        } 
+        
+        // 개별 RGB 제어
+        else if (endpoint == "/rgb/individual") {
             success = raspbotService.controlRgbIndividual(
                 req_json.value("led_number", 0),
                 static_cast<DeviceStatus>(req_json.value("status", 0)),
                 static_cast<RgbColor>(req_json.value("color", 0)));
             message = success ? "RGB 개별 제어 성공" : "RGB 개별 제어 실패";
-        } else if (endpoint == "/rgb/brightness/all") {
+        }
+        
+        // 전체 RGB 밝기 제어
+        else if (endpoint == "/rgb/brightness/all") {
             success = raspbotService.setRgbAllBrightness(
                 req_json.value("r", 0),
                 req_json.value("g", 0),
                 req_json.value("b", 0));
             message = success ? "RGB 전체 밝기 제어 성공" : "RGB 전체 밝기 제어 실패";
-        } else if (endpoint == "/rgb/brightness/individual") {
+        }
+        
+        // 개별 RGB 밝기 제어
+        else if (endpoint == "/rgb/brightness/individual") {
             success = raspbotService.setRgbIndividualBrightness(
                 req_json.value("led_number", 0),
                 req_json.value("r", 0),
                 req_json.value("g", 0),
                 req_json.value("b", 0));
             message = success ? "RGB 개별 밝기 제어 성공" : "RGB 개별 밝기 제어 실패";
-        } else if (endpoint == "/buzzer") {
+        }
+        
+        // 부저 제어
+        else if (endpoint == "/buzzer") {
             success = raspbotService.controlBuzzer(
                 static_cast<DeviceStatus>(req_json.value("status", 0)));
             message = success ? "부저 제어 성공" : "부저 제어 실패";
-        } else if (endpoint == "/ultrasonic") {
+        }
+        
+        // 초음파 센서 제어
+        else if (endpoint == "/ultrasonic") {
             success = raspbotService.controlUltrasonic(
                 static_cast<DeviceStatus>(req_json.value("status", 0)));
             message = success ? "초음파 센서 제어 성공" : "초음파 센서 제어 실패";
-        } else if (endpoint == "/ultrasonic/read") {
+        }
+        
+        // 초음파 거리 읽기
+        else if (endpoint == "/ultrasonic/read") {
             auto result = raspbotService.readUltrasonicDistance();
+
+            // std::pair<bool, T> -> 첫 번째 값은 성공/실패 여부 (first), 두 번째는 센서 데이터 값
             if (result.first) { // 첫 번째 요소는 성공 여부
                 response["status"] = "success";
                 response["distance"] = result.second; // 두 번째 요소는 실제 값
@@ -81,7 +113,10 @@ std::string handleRestApiRequest(RaspbotService& raspbotService, const std::stri
                 success = false;
                 message = "초음파 거리 읽기 실패";
             }
-        } else if (endpoint == "/ir/sensor") {
+        }
+        
+        // 적외선 센서 읽기
+        else if (endpoint == "/ir/sensor") {
             auto result = raspbotService.readInfraredSensorData();
             if (result.first) {
                 response["status"] = "success";
