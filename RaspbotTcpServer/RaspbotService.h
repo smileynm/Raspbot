@@ -34,8 +34,8 @@ public:
     
     // 적외선 센서 제어
     bool controlInfraredSensor(DeviceStatus status);
-    std::pair<bool, unsigned char> readInfraredSensorData();
-    std::pair<bool, unsigned char> readInfraredCodeValue();
+    std::pair<bool, unsigned char> readInfraredSensorData();    // 적외선 센서 (라인트레이싱)
+    std::pair<bool, unsigned char> readInfraredCodeValue();     // 적외선 센서 (리모컨)
 
     // 키 데이터
     std::pair<bool, unsigned char> readKeyData();

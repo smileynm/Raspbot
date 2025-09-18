@@ -115,7 +115,7 @@ std::string handleRestApiRequest(RaspbotService& raspbotService, const std::stri
             }
         }
         
-        // 적외선 센서 읽기
+        // 적외선 센서 읽기 (라인트레이싱)
         else if (endpoint == "/ir/sensor") {
             auto result = raspbotService.readInfraredSensorData();
             if (result.first) {
@@ -126,7 +126,10 @@ std::string handleRestApiRequest(RaspbotService& raspbotService, const std::stri
                 success = false;
                 message = "IR 센서 데이터 읽기 실패";
             }
-        } else if (endpoint == "/ir/code") {
+        }
+        
+        // 적외선 센서 읽기 (리모컨 제어 코드)
+        else if (endpoint == "/ir/code") {
             auto result = raspbotService.readInfraredCodeValue();
             if (result.first) {
                 response["status"] = "success";
@@ -136,7 +139,10 @@ std::string handleRestApiRequest(RaspbotService& raspbotService, const std::stri
                 success = false;
                 message = "IR 코드 데이터 읽기 실패";
             }
-        } else if (endpoint == "/key/read") {
+        }
+        
+        // Raspbot의 물리적 버튼 (0x00: 눌려있지 않은 상태, 0x01: 눌린 상태)
+        else if (endpoint == "/key/read") {
             auto result = raspbotService.readKeyData();
             if (result.first) {
                 response["status"] = "success";
@@ -146,7 +152,10 @@ std::string handleRestApiRequest(RaspbotService& raspbotService, const std::stri
                 success = false;
                 message = "키 데이터 읽기 실패";
             }
-        } else {
+        }
+        
+        // 명시되지 않은 엔드포인트가 request되었을 경우
+        else {
             response["status"] = "error";
             response["message"] = "알 수 없는 엔드포인트: " + endpoint;
             return response.dump();
@@ -178,7 +187,7 @@ int main(int argc, char* argv[]) {
     // I2C 컨트롤러 초기화
     I2CController i2cController(RASPBOT_I2C_ADDRESS);
     if (!i2cController.openDevice()) {
-        std::cerr << "I2C 장치 초기화에 실패했습니다. 서버를 종료합니다." << std::endl;
+        std::cerr << "I2C 장치 초기화 실패. 서버 종료." << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -191,7 +200,7 @@ int main(int argc, char* argv[]) {
         try {
             serverPort = std::stoi(argv[1]);
         } catch (const std::exception& e) {
-            std::cerr << "경고: 잘못된 포트 번호입니다. 기본 포트 " << serverPort << "를 사용합니다." << std::endl;
+            std::cerr << "경고: 잘못된 포트 번호. 기본 포트 " << serverPort << "를 사용." << std::endl;
         }
     }
 
@@ -202,7 +211,7 @@ int main(int argc, char* argv[]) {
     });
 
     if (!server.startListening()) {
-        std::cerr << "TCP 서버 시작에 실패했습니다. 프로그램을 종료합니다." << std::endl;
+        std::cerr << "TCP 서버 시작 실패. 프로그램 종료." << std::endl;
         return EXIT_FAILURE;
     }
 
